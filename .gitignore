@@ -1,0 +1,6 @@
+/plots/
+
+/report/*.docx
+/report/*.tmp
+
+/src/__pycache__/
