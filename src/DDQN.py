@@ -54,10 +54,11 @@ class DDQNAgent:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.q_net.to(self.device)
         self.target_net.to(self.device)
+        self.action_dim = action_dim
 
     def select_action(self, state):
         if random.random() < self.epsilon:
-            return random.randint(0, 1)
+            return random.randint(0, self.action_dim - 1)
         state_tensor = torch.tensor(state, dtype=torch.float32).to(self.device)
         with torch.no_grad():
             return self.q_net(state_tensor).argmax().item()
@@ -68,8 +69,9 @@ class DDQNAgent:
         s, a, r, s2, d = self.buffer.sample(128)
         s, a, r, s2, d = s.to(self.device), a.to(self.device), r.to(self.device), s2.to(self.device), d.to(self.device)
 
+        # Double DQN: используем основную сеть для выбора действия, а target сеть для оценки
         with torch.no_grad():
-            next_actions = self.q_net(s2).argmax(1) 
+            next_actions = self.q_net(s2).argmax(1) # Выбираем действие основной сетью
             target = r + self.gamma * self.target_net(s2).gather(1, next_actions.unsqueeze(1)).squeeze(1) * (1 - d)
 
         q_vals = self.q_net(s).gather(1, a.unsqueeze(1)).squeeze(1)
